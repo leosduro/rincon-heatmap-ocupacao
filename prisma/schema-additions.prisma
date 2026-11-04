@@ -1,0 +1,33 @@
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  SAFE
+}
+
+model CleaningProfile {
+  id             String   @id @default(cuid())
+  propertyId     String
+  categoryId     String
+  averageMinutes Int      @default(35)
+  bufferMinutes  Int      @default(10)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@unique([propertyId, categoryId])
+}
+
+model HousekeepingTask {
+  id               String    @id @default(cuid())
+  propertyId       String
+  roomId           String
+  assignedToId     String?
+  priority         Int       @default(3)
+  estimatedMinutes Int
+  riskLevel        RiskLevel @default(SAFE)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  status           String    @default("PENDING")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
