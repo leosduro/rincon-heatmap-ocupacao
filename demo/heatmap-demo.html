@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Heatmap de Ocupação Preditivo – Demo Rincon</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:20px; }
+  h1 { margin-top:0; }
+  .controls { margin-bottom:20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  button { background:#334155; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
+  button:hover { background:#475569; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px; }
+  .card { border-radius:10px; padding:12px; min-height:120px; position:relative; transition:all .2s; }
+  .card h3 { margin:0 0 4px 0; font-size:1.4rem; }
+  .card .meta { font-size:0.75rem; opacity:0.85; }
+  .CRITICAL { background:#dc2626; color:white; animation:pulse 1.5s infinite; }
+  .HIGH { background:#ea580c; color:white; }
+  .MEDIUM { background:#eab308; color:#1e293b; }
+  .LOW { background:#22c55e; color:#052e16; }
+  .SAFE { background:#1e293b; border:1px solid #334155; }
+  .OCCUPIED { background:#1d4ed8; }
+  .IN_PROGRESS { background:#f97316; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+  .badge { position:absolute; top:8px; right:8px; font-size:0.7rem; background:rgba(0,0,0,.4); padding:2px 6px; border-radius:999px; }
+  .side { margin-top:24px; background:#1e293b; padding:16px; border-radius:10px; }
+</style>
+</head>
+<body>
+<h1>Heatmap de Ocupação Preditivo <small style="font-size:0.6em;opacity:.7">(Demo Rincon)</small></h1>
+<div class="controls">
+  <button onclick="simulateCheckinSoon()">Simular Check-in em 20 min</button>
+  <button onclick="startCleaning()">Iniciar limpeza no 101</button>
+  <button onclick="finishCleaning()">Marcar 101 como Pronto</button>
+  <button onclick="reset()">Resetar demo</button>
+</div>
+<div id="grid" class="grid"></div>
+<div class="side">
+  <h3>Fila de Prioridade (Governança)</h3>
+  <ol id="queue"></ol>
+</div>
+<script>
+const rooms = [
+  { number:"101", floor:1, status:"VACANT_DIRTY", hk:"DIRTY", minutes:20, risk:"CRITICAL" },
+  { number:"102", floor:1, status:"OCCUPIED", hk:"CLEAN", minutes:null, risk:"SAFE" },
+  { number:"103", floor:1, status:"VACANT_CLEAN", hk:"CLEAN", minutes:180, risk:"LOW" },
+  { number:"201", floor:2, status:"VACANT_DIRTY", hk:"DIRTY", minutes:45, risk:"HIGH" },
+  { number:"202", floor:2, status:"VACANT_DIRTY", hk:"IN_PROGRESS", minutes:90, risk:"MEDIUM" },
+  { number:"203", floor:2, status:"OCCUPIED", hk:"CLEAN", minutes:null, risk:"SAFE" },
+  { number:"301", floor:3, status:"VACANT_DIRTY", hk:"DIRTY", minutes:120, risk:"MEDIUM" },
+  { number:"302", floor:3, status:"VACANT_CLEAN", hk:"CLEAN", minutes:null, risk:"SAFE" },
+];
+function riskClass(r) {
+  if (r.hk === "IN_PROGRESS") return "IN_PROGRESS";
+  if (r.status === "OCCUPIED") return "OCCUPIED";
+  return r.risk;
+}
+function render() {
+  document.getElementById("grid").innerHTML = rooms.map(r => `
+    <div class="card ${riskClass(r)}">
+      ${r.risk === "CRITICAL" ? '<span class="badge">URGENTE</span>' : ''}
+      <h3>${r.number}</h3>
+      <div class="meta">${r.hk}</div>
+      <div class="meta">${r.minutes ? `Check-in em ${r.minutes} min` : "Sem previsão"}</div>
+    </div>
+  `).join("");
+  const queue = rooms.filter(r => r.hk === "DIRTY" || r.hk === "IN_PROGRESS")
+    .sort((a,b) => (a.minutes||999) - (b.minutes||999));
+  document.getElementById("queue").innerHTML = queue.map(r =>
+    `<li><strong>${r.number}</strong> – ${r.minutes || "?"} min – ${r.risk}</li>`
+  ).join("");
+}
+function simulateCheckinSoon() { const r = rooms.find(x => x.number === "101"); r.minutes = 18; r.risk = "CRITICAL"; r.hk = "DIRTY"; render(); }
+function startCleaning() { const r = rooms.find(x => x.number === "101"); r.hk = "IN_PROGRESS"; render(); }
+function finishCleaning() { const r = rooms.find(x => x.number === "101"); r.hk = "CLEAN"; r.status = "VACANT_CLEAN"; r.risk = "LOW"; r.minutes = 180; render(); }
+function reset() { location.reload(); }
+render();
+</script>
+</body>
+</html>
